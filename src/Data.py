@@ -26,6 +26,9 @@ class sample:
         #Get the feature vector
         return self.features
 
+    def getValueAtIndex(self, index):
+        return self.features[index]
+
     def getLabel(self):
         #Get the label for this sample
         return self.label
@@ -45,23 +48,22 @@ class sample:
     def splitLeft(self, attributeNumber, threshold):
         '''
         Returns true if the sample is less-than-or-equal-to 
-        the threshold for that attribute number. If the attribute 
-        number does not exist it returns false
+        the threshold for that attribute number. 
         '''
 
-        if len(self.features) >= attributeNumber:
-            return False
+        if self.features[attributeNumber] <= threshold:
+            return True
 
-        return self.features[attributeNumber] <= threshold
+        return False
 
 
 
 class TrainingData:
     """A TrainingData object contains a collection of samples that have labels.
     This can be passed to a classifier and be used for training. """
-    def __init__(self, DataName):
+    def __init__(self, DataName, data=[]):
         self.DataName = DataName
-        self.data = []  #Data is a simple list of samples
+        self.data = data #Data is a simple list of samples
 
     def addSample(self, sample):
         if sample.getLabel() != None:
@@ -73,11 +75,11 @@ class TrainingData:
     def getLength(self):
         return len(self.data)
 
-    def isPure(self):
-        '''
-        Returns true if all of the data elements have the same 
-        class type and that class type is not None.
-        '''
+    def getFeatureLength(self):
+        return len(self.data[0].getFeatures())
+
+    def isPureA(self):
+
         #If there is no data 
         if len(self.data) <= 0:
             return False
@@ -98,6 +100,19 @@ class TrainingData:
         #On success
         return True
 
+    def isPure(self):
+        '''
+        Returns true if all of the data elements have the same 
+        class type
+        '''
+
+        labels = self.getLabelStatistics()
+
+        if len(labels.keys()) != 1:
+            return False
+
+        return True
+
 
     def splitOn(self, attributeNumber, threshold):
         '''
@@ -108,14 +123,18 @@ class TrainingData:
         and the greater-than set
         '''
 
-        leftData = []
-        rightData = []
+        left = []
+        right = []
 
         for elem in self.data:
             if elem.splitLeft(attributeNumber, threshold):
-                leftData.append(elem)
+                left.append(elem)
             else:
-                rightData.append(elem)
+                right.append(elem)
+
+        leftData = TrainingData("left", left)
+        rightData = TrainingData("right", right)
+
 
         return (leftData, rightData)
 
@@ -148,24 +167,66 @@ class TrainingData:
 
         #assuming all the data is labeled 
         total = len(self.data)
-        entropy = 0 
+        entropy = 0.0 
 
         for key in classes:
             #Calculate the probability of the key
-            pOfKey = classes[key] / total
+            pOfKey = float(classes[key]) / float(total)
             #Calculate the entropy for this key and add it to the running sum
-            entropy = entropy + -1 * pOfKey * np.log2(pOfKey)
+            if pOfKey != 0:
+                entropy = entropy + -1 * pOfKey * np.log2(pOfKey)
+
 
         return entropy
 
+    #Might take a while this way
+    def getBestThreshold(self, feature):
+        #Calculate which feature value splits 
+        #the best, has the lowest entropy
+        minEnt = 1
+        bestThreshold = 0
+        for samp in self.data:
+            thresh = samp.getFeatures()[feature] 
+            (LSet, RSet) = self.splitOn(feature, thresh)
+            LEnt = LSet.getEntropy()
+            REnt = RSet.getEntropy()
+            newEnt = LEnt + REnt
+            if newEnt < minEnt:
+                minEnt = newEnt
+                bestThreshold = thresh
 
-    def getRandomSubset(self, seed=0, num=0):
+        return bestThreshold
+
+
+    def betterThreshold(self, feature):
+        #Calculate the average value, split on that. 
+        totalN = self.getLength()
+        runningTotal = 0.0
+
+        for samp in self.data:
+            runningTotal += samp.getValueAtIndex(feature)
+
+        return float(runningTotal) / totalN
+
+
+
+    def getBag(self, seed=0):
         #Set the seed if necessary
         if seed !=0:
             random.seed(seed)
-        if num == 0:
-            #Default length of half the data set
-            num = len(self.data) / 2
 
-        #Choose the number of elements from the subset
-        random.sample(self.data, num)    
+        bag =[]
+
+        #Create the bag
+        for i in range(0, len(self.data)):
+            bag.append(random.choice(self.data))
+
+        #TrainingData bag 
+        bagSet = TrainingData(bag)
+        return bagSet
+
+
+    def addSampleFromFeatures(self, features, label):
+        #Make a sample object and add it to the data list
+        samp = sample(features, label)
+        self.addSample(samp)

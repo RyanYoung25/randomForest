@@ -1,12 +1,16 @@
 #!/usr/bin/env python
 from Data import sample, TrainingData
+import random
+import numpy as np
+import sys
 
 
 class TreeNode:
     """docstring for treeNode"""
     def __init__(self, dataSet, featureList, parent=None):
-        self.featureNumber = None
-        self.threshold = None
+        self.featureNumber = None #This is the trained index of the feature to split on
+        self.featureList = featureList 
+        self.threshold = None     #This is the trained threshold of the feature to split on
         self.leftChild = None
         self.rightChild = None
         self.dataSet = dataSet
@@ -18,7 +22,7 @@ class TreeNode:
         feature indicies to use. This prevents splitting on 
         the same feature multiple times
 
-        Runs the C45 algorithm. 
+        Runs a rough C45 algorithm. 
 
         In pseudocode, the general algorithm for building decision trees is:
 
@@ -32,12 +36,14 @@ class TreeNode:
 
         #Base Cases:
         
+        print self
         #All instances in dataSet are the same
         if(self.dataSet.isPure()):
             #gets the label of the first data instance and makes a leaf node
             #classifying it. 
             label =  self.dataSet.getData()[0].getLabel()
             leaf = LeafNode(label)
+            print "Pure!"
             return leaf
         #If there are no more features in the feature list
         if len(self.featureList) == 0:
@@ -58,23 +64,27 @@ class TreeNode:
         #Check all of the features for the split with the most 
         #information gain. Use that split.
         currentEntropy = self.dataSet.getEntropy()
-        currntLength = self.dataSet.getLength()
-        infoGain = 0
+        currentLength = self.dataSet.getLength()
+        infoGain = -1 * sys.maxint
         bestFeature = 0
-        bestLeft = []
-        bestRight = []
+        bestLeft = None
+        bestRight = None
+        bestThreshold = 0
 
-        for featureIndex in self.featureList:
+        #Feature Bagging, Random subspace
+        num = int(np.ceil(np.sqrt(len(self.featureList))))
+        featureSubset = random.sample(self.featureList, num)
+
+        for featureIndex in featureSubset:
             #Calculate the threshold to use for that feature
-            threshold = 0 #place holder TODO
+            threshold = self.dataSet.betterThreshold(featureIndex)
 
             (leftSet, rightSet) = self.dataSet.splitOn(featureIndex, threshold)
 
             leftEntropy = leftSet.getEntropy()
             rightEntropy = rightSet.getEntropy()
             #Weighted entropy for this split
-            newEntropy = (leftSet.getLength() / currntLength) * leftEntropy + (rightSet.getLength() / currntLength) * rightEntropy
-
+            newEntropy = (leftSet.getLength() / currentLength) * leftEntropy + (rightSet.getLength() / currentLength) * rightEntropy
             newIG = currentEntropy - newEntropy
 
             if(newIG > infoGain):
@@ -83,18 +93,42 @@ class TreeNode:
                 bestLeft = leftSet
                 bestRight = rightSet
                 bestFeature = featureIndex
+                bestThreshold = threshold
 
-        #Create left and right child nodes
-        newFeatureList = self.featureList.pop(bestFeature)
+        newFeatureList = list(self.featureList)
+        newFeatureList.remove(bestFeature)
 
+        #Another base case, if there are no good features to split on
+        if bestLeft.getLength() == 0 or bestRight.getLength() == 0:
+            labels = self.dataSet.getLabelStatistics()
+            bestLabel = None
+            mostTimes = 0
+
+            for key in labels:
+                if labels[key] > mostTimes:
+                    bestLabel = key
+                    mostTimes = labels[key]
+            #Make the leaf node with the best label
+            leaf = LeafNode(bestLabel)
+            return leaf
+
+        self.threshold = bestThreshold
+        self.featureNumber = bestFeature
         leftChild = TreeNode(bestLeft, newFeatureList, self)
         rightChild = TreeNode(bestRight, newFeatureList, self)
+
+        print "Splitting"
 
         self.leftChild = leftChild.c45Train()
         self.rightChild = rightChild.c45Train()
 
         return self
         
+    def __str__(self):
+        return str(self.featureList)
+
+    def __repr__(self):
+        return self.__str__()
                 
     def classify(self, sample):
         '''
@@ -102,9 +136,9 @@ class TreeNode:
         '''
 
 
-        features = sample.getFeatures()
+        value = sample.getFeatures()[self.featureNumber]
 
-        if(features[self.featureNumber] < self.threshold):
+        if(value < self.threshold):
             #Continue down the left child    
             return self.leftChild.classify(sample)
 
@@ -124,17 +158,26 @@ class LeafNode:
 
 class C45Tree:
 
-    def __init__(self):
+    def __init__(self, data):
         self.rootNode = None
+        self.data = data
 
-    def train(self, data):
+    def train(self):
         '''
         Trains a decision tree classifier on data set passed in. 
         The data set should contain a good mix of each class to be
         classified.
         '''
-
-        self.rootNode = TreeNode(data)
+        length  = self.data.getFeatureLength()
+        featureIndices = range(length)
+        self.rootNode = TreeNode(self.data, featureIndices)
         self.rootNode.c45Train()
+
+    def classify(self, sample):
+        '''
+        Classify a sample based off of this trained tree.
+        '''
+
+        return self.rootNode.classify(sample)
 
 
