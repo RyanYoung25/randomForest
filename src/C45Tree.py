@@ -36,14 +36,12 @@ class TreeNode:
 
         #Base Cases:
         
-        print self
         #All instances in dataSet are the same
         if(self.dataSet.isPure()):
             #gets the label of the first data instance and makes a leaf node
             #classifying it. 
             label =  self.dataSet.getData()[0].getLabel()
             leaf = LeafNode(label)
-            print "Pure!"
             return leaf
         #If there are no more features in the feature list
         if len(self.featureList) == 0:
@@ -116,8 +114,6 @@ class TreeNode:
         self.featureNumber = bestFeature
         leftChild = TreeNode(bestLeft, newFeatureList, self)
         rightChild = TreeNode(bestRight, newFeatureList, self)
-
-        print "Splitting"
 
         self.leftChild = leftChild.c45Train()
         self.rightChild = rightChild.c45Train()

@@ -222,7 +222,7 @@ class TrainingData:
             bag.append(random.choice(self.data))
 
         #TrainingData bag 
-        bagSet = TrainingData(bag)
+        bagSet = TrainingData("bag", bag)
         return bagSet
 
 
@@ -230,3 +230,21 @@ class TrainingData:
         #Make a sample object and add it to the data list
         samp = sample(features, label)
         self.addSample(samp)
+
+    def getKSegments(self, k):
+
+        randomDatalist = list(self.data)
+        random.shuffle(randomDatalist)
+        sliceSize = len(randomDatalist) / k
+
+        listOfData = []
+
+        for i in range(0, len(randomDatalist), sliceSize):
+            slice = randomDatalist[i:i+sliceSize]
+            listOfData.append(TrainingData("slice", slice))
+
+        return listOfData
+
+    def combineWithNewData(self, newData):
+        self.data += newData.getData()
+
