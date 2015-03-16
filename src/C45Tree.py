@@ -83,6 +83,7 @@ class TreeNode:
             rightEntropy = rightSet.getEntropy()
             #Weighted entropy for this split
             newEntropy = (leftSet.getLength() / currentLength) * leftEntropy + (rightSet.getLength() / currentLength) * rightEntropy
+            #Calculate the gain for this test
             newIG = currentEntropy - newEntropy
 
             if(newIG > infoGain):
@@ -112,6 +113,8 @@ class TreeNode:
 
         self.threshold = bestThreshold
         self.featureNumber = bestFeature
+
+
         leftChild = TreeNode(bestLeft, newFeatureList, self)
         rightChild = TreeNode(bestRight, newFeatureList, self)
 

@@ -1,5 +1,6 @@
 #! usr/bin/env python
 import numpy as np
+import copy
 import random
 
 class sample:
@@ -17,6 +18,19 @@ class sample:
             raise ValueError("The feature vector is not a single dimensional numpy array!")
 
         self.features = features
+
+
+    def normalizeValues(self, means, stdDevs):
+        '''
+        Perform Z score normalization on the values 
+        for this sample
+        '''
+        index = 0
+        for index in xrange(len(self.features)):
+            z = (self.features[index] - means[index]) / stdDevs[index]
+            self.features[index] = z
+            index += 1
+
 
     def setLabel(self, label):
         #Set the label for the data sample
@@ -61,9 +75,14 @@ class sample:
 class TrainingData:
     """A TrainingData object contains a collection of samples that have labels.
     This can be passed to a classifier and be used for training. """
-    def __init__(self, DataName, data=[]):
+    def __init__(self, DataName, data=None):
         self.DataName = DataName
-        self.data = data #Data is a simple list of samples
+        if data == None:
+            self.data = []
+        else:
+            self.data = data #Data is a simple list of samples
+        self.stats = None
+        self.entropy = None
 
     def addSample(self, sample):
         if sample.getLabel() != None:
@@ -145,8 +164,10 @@ class TrainingData:
         the number of occurrences for that label
         '''
 
-        stats = {}
+        if self.stats != None:
+            return self.stats
 
+        stats = {}
         for elem in self.data:
             label = elem.getLabel()
             if label in stats:
@@ -154,7 +175,9 @@ class TrainingData:
             else:
                 stats[label] = 1
 
-        return stats
+        self.stats = stats
+
+        return self.stats
 
 
     def getEntropy(self):
@@ -162,6 +185,9 @@ class TrainingData:
         Returns a numerical quantity of the entropy for this 
         data set. 
         '''
+
+        if self.entropy != None:
+            return self.entropy
 
         classes = self.getLabelStatistics()
 
@@ -176,14 +202,16 @@ class TrainingData:
             if pOfKey != 0:
                 entropy = entropy + -1 * pOfKey * np.log2(pOfKey)
 
-
-        return entropy
+        self.entropy = entropy
+        return self.entropy
 
     #Might take a while this way
     def getBestThreshold(self, feature):
         #Calculate which feature value splits 
         #the best, has the lowest entropy
-        minEnt = 1
+        
+
+        minEnt = float("inf")
         bestThreshold = 0
         for samp in self.data:
             thresh = samp.getFeatures()[feature] 
@@ -191,9 +219,10 @@ class TrainingData:
             LEnt = LSet.getEntropy()
             REnt = RSet.getEntropy()
             newEnt = LEnt + REnt
-            if newEnt < minEnt:
+            if newEnt <= minEnt:
                 minEnt = newEnt
                 bestThreshold = thresh
+
 
         return bestThreshold
 
@@ -231,6 +260,7 @@ class TrainingData:
         samp = sample(features, label)
         self.addSample(samp)
 
+
     def getKSegments(self, k):
 
         randomDatalist = list(self.data)
@@ -244,6 +274,45 @@ class TrainingData:
             listOfData.append(TrainingData("slice", slice))
 
         return listOfData
+
+    def normalizeData(self):
+        '''
+        Calculate the mean and standard deviation for every 
+        feature value then normalize all of the data. This is 
+        Z score normalization and is important for the position 
+        data. 
+
+        This returns a tuple of lists that contain the mean 
+        and standard deviation for each feature value so that it can
+        be applied to future data samples
+        '''
+
+        n = len(self.data)
+        sums = [0 for i in xrange(len(self.data[0].getFeatures()))]
+        squaredSums = [0 for i in xrange(len(self.data[0].getFeatures()))]
+        means = [0 for i in xrange(len(self.data[0].getFeatures()))]
+        stdDevs = [0 for i in xrange(len(self.data[0].getFeatures()))]
+
+        for samp in self.data:
+            features = samp.getFeatures()
+            index = 0
+            for val in features:
+
+                sums[index] += val
+                squaredSums[index] += val * val
+                index += 1
+
+        for i in xrange(len(sums)):
+            means[i] = sums[i] / n
+            stdDevs[i] = np.sqrt((squaredSums[i]/n) - (means[i] * means[i]))
+
+        for samp in self.data:
+            samp.normalizeValues(means, stdDevs)
+
+        return (means, stdDevs)
+
+
+
 
     def combineWithNewData(self, newData):
         self.data += newData.getData()
