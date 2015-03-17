@@ -10,8 +10,8 @@ Calculate the theta between two vectors a, and b.
 '''
 def calculateTheta(a, b):
     dotProd = np.dot(a, b)        #a dot b
-    aNorm = np.sqrt(np.dot(a, a)) # ||a||
-    bNorm = np.sqrt(np.dot(b, b)) # ||b||
+    aNorm = np.sqrt(np.dot(a, a))  # ||a||
+    bNorm = np.sqrt(np.dot(b, b))  # ||b||
     #theta = arccos(a dot b / (||a||*||b||))
     return math.acos(dotProd/(aNorm*bNorm))
 
@@ -39,7 +39,7 @@ def getPointFromJoint(joint):
 
 '''
 Math for calculating the Shoulder Yaw from
-Matthew Wiese Star Project ITERO
+Matthew Wiese Star Project ITERO inspired
 '''
 def calculateYaw(EW, ES, joint):
         #finding z line cross shoulder elbow vector:
@@ -62,6 +62,7 @@ def calculateYaw(EW, ES, joint):
 
         theta = calculateTheta(elbowToOrentation, elbowToZ)
         return theta
+
 
 def generateAngles(jsonString):
     #Make the jsonString into a dictionary to get the data
@@ -162,7 +163,7 @@ if __name__ == '__main__':
         print "Usage: ./AngleCalculator.py <Input File> <Output File>"
 
     #Open the input file
-    fIn = open(filename,'r')
+    fIn = open(filename, 'r')
     #Open the output file  
     fOut = open(output, 'w')  
     #Iterate through line by line of the input 

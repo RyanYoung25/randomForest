@@ -1,8 +1,7 @@
 #! usr/bin/env python
 
-import numpy as np 
-from Data import TrainingData
 from C45Tree import C45Tree
+#Author:Ryan Young
 
 
 class RandomForest(object):
@@ -10,6 +9,10 @@ class RandomForest(object):
     for each of the trees in the random forest. To train the forest
     create an instance of it then call train on a TraingData object"""
     def __init__(self, data, numberOfTrees=100):
+        '''
+        Initialize the random forest. 
+        Each tree has a bag of the data associated with it.
+        '''
         self.data = data    #The data that the trees will be trained on
         self.numberOfTrees = numberOfTrees
         self.forest = []
@@ -19,10 +22,16 @@ class RandomForest(object):
             self.forest.append(C45Tree(bag))
 
     def train(self):
+        '''
+        Train the random forest trees.
+        '''
         for tree in self.forest:
             tree.train()
 
     def classify(self, sample):
+        '''
+        Classify a data sample by polling the trees.
+        '''
 
         #Create an empty dictionary
         votes = {}

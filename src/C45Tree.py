@@ -1,14 +1,14 @@
 #!/usr/bin/env python
-from Data import sample, TrainingData
 import random
 import numpy as np
 import sys
+#Author: Ryan Young
 
 
 class TreeNode:
     """docstring for treeNode"""
     def __init__(self, dataSet, featureList, parent=None):
-        self.featureNumber = None #This is the trained index of the feature to split on
+        self.featureNumber = None  #This is the trained index of the feature to split on
         self.featureList = featureList 
         self.threshold = None     #This is the trained threshold of the feature to split on
         self.leftChild = None
@@ -40,7 +40,7 @@ class TreeNode:
         if(self.dataSet.isPure()):
             #gets the label of the first data instance and makes a leaf node
             #classifying it. 
-            label =  self.dataSet.getData()[0].getLabel()
+            label = self.dataSet.getData()[0].getLabel()
             leaf = LeafNode(label)
             return leaf
         #If there are no more features in the feature list
@@ -57,8 +57,6 @@ class TreeNode:
             leaf = LeafNode(bestLabel)
             return leaf
 
-        
-        
         #Check all of the features for the split with the most 
         #information gain. Use that split.
         currentEntropy = self.dataSet.getEntropy()
@@ -114,7 +112,6 @@ class TreeNode:
         self.threshold = bestThreshold
         self.featureNumber = bestFeature
 
-
         leftChild = TreeNode(bestLeft, newFeatureList, self)
         rightChild = TreeNode(bestRight, newFeatureList, self)
 
@@ -134,7 +131,6 @@ class TreeNode:
         Recursivly traverse the tree to classify the sample that is passed in. 
         '''
 
-
         value = sample.getFeatures()[self.featureNumber]
 
         if(value < self.threshold):
@@ -145,7 +141,12 @@ class TreeNode:
             #continue down the right child
             return self.rightChild.classify(sample)
 
+
 class LeafNode:
+    '''
+    A leaf node is a node that just has a classification 
+    and is used to cap off a tree.
+    '''
 
     def __init__(self, classification):
         self.classification = classification
@@ -155,7 +156,13 @@ class LeafNode:
         #This is the base case of the classify recursive function for TreeNodes
         return self.classification
 
+
 class C45Tree:
+    '''
+    A tree contains a root node and from here
+    does the training and classification. Tree objects also
+    are responsible for having the data that they use to train.
+    '''
 
     def __init__(self, data):
         self.rootNode = None
@@ -167,7 +174,7 @@ class C45Tree:
         The data set should contain a good mix of each class to be
         classified.
         '''
-        length  = self.data.getFeatureLength()
+        length = self.data.getFeatureLength()
         featureIndices = range(length)
         self.rootNode = TreeNode(self.data, featureIndices)
         self.rootNode.c45Train()

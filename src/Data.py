@@ -1,7 +1,8 @@
 #! usr/bin/env python
 import numpy as np
-import copy
 import random
+#Author: Ryan Young
+
 
 class sample:
     """A sample object is one instance of a sample. It contains a feature
@@ -19,7 +20,6 @@ class sample:
 
         self.features = features
 
-
     def normalizeValues(self, means, stdDevs):
         '''
         Perform Z score normalization on the values 
@@ -31,7 +31,6 @@ class sample:
             self.features[index] = z
             index += 1
 
-
     def setLabel(self, label):
         #Set the label for the data sample
         self.label = label
@@ -41,6 +40,7 @@ class sample:
         return self.features
 
     def getValueAtIndex(self, index):
+        #Get the value at the index
         return self.features[index]
 
     def getLabel(self):
@@ -49,14 +49,14 @@ class sample:
 
     def getRandomSubsetFeatures(self, seed=0, num=0):
         #Set the seed if necessary
-        if seed !=0:
+        if seed != 0:
             random.seed(seed)
         if num == 0:
             #Default sqrt(p)
             num = np.sqrt(len(self.features))
 
         subFeatures = random.sample(self.features, num)
-        subFeatures.shape = (len(subFeatures),) #Change the shape back to a single dimensional numpy array
+        subFeatures.shape = (len(subFeatures),)  #Change the shape back to a single dimensional numpy array
         return subFeatures
 
     def splitLeft(self, attributeNumber, threshold):
@@ -71,38 +71,47 @@ class sample:
         return False
 
 
-
 class TrainingData:
     """A TrainingData object contains a collection of samples that have labels.
     This can be passed to a classifier and be used for training. """
     def __init__(self, DataName, data=None):
         self.DataName = DataName
-        if data == None:
+        if data is None:
             self.data = []
         else:
-            self.data = data #Data is a simple list of samples
+            self.data = data  #Data is a simple list of samples
         self.stats = None
         self.entropy = None
 
     def addSample(self, sample):
-        if sample.getLabel() != None:
+        #Add a sample to the data set
+        if sample.getLabel() is not None:
             self.data.append(sample)
 
     def getData(self):
+        #Return the data list
         return self.data
 
     def getLength(self):
+        #Return the length of the data list
         return len(self.data)
 
     def getFeatureLength(self):
+        #Return the length of the features in this data
+        # this assumes that the data list is populated and
+        # uniform in sample type.
         return len(self.data[0].getFeatures())
 
     def isPureA(self):
+        '''
+        Checks to see if all of the data samples in this set 
+        are from the same class. This is a version that took 
+        longer than the other version
+        '''
 
         #If there is no data 
         if len(self.data) <= 0:
             return False
-
 
         firstType = self.data[0].getLabel()
         #For each sample check if the label matches the first
@@ -113,7 +122,7 @@ class TrainingData:
 
         #If the type that they all matched was None the data 
         # was unlabled so we can't call it pure
-        if firstType == None:
+        if firstType is None:
             return False
 
         #On success
@@ -131,7 +140,6 @@ class TrainingData:
             return False
 
         return True
-
 
     def splitOn(self, attributeNumber, threshold):
         '''
@@ -154,9 +162,7 @@ class TrainingData:
         leftData = TrainingData("left", left)
         rightData = TrainingData("right", right)
 
-
         return (leftData, rightData)
-
 
     def getLabelStatistics(self):
         '''
@@ -164,7 +170,7 @@ class TrainingData:
         the number of occurrences for that label
         '''
 
-        if self.stats != None:
+        if self.stats is not None:
             return self.stats
 
         stats = {}
@@ -179,14 +185,13 @@ class TrainingData:
 
         return self.stats
 
-
     def getEntropy(self):
         '''
         Returns a numerical quantity of the entropy for this 
         data set. 
         '''
 
-        if self.entropy != None:
+        if self.entropy is not None:
             return self.entropy
 
         classes = self.getLabelStatistics()
@@ -210,7 +215,6 @@ class TrainingData:
         #Calculate which feature value splits 
         #the best, has the lowest entropy
         
-
         minEnt = float("inf")
         bestThreshold = 0
         for samp in self.data:
@@ -223,9 +227,7 @@ class TrainingData:
                 minEnt = newEnt
                 bestThreshold = thresh
 
-
         return bestThreshold
-
 
     def betterThreshold(self, feature):
         #Calculate the average value, split on that. 
@@ -237,14 +239,12 @@ class TrainingData:
 
         return float(runningTotal) / totalN
 
-
-
     def getBag(self, seed=0):
         #Set the seed if necessary
-        if seed !=0:
+        if seed != 0:
             random.seed(seed)
 
-        bag =[]
+        bag = []
 
         #Create the bag
         for i in range(0, len(self.data)):
@@ -254,14 +254,14 @@ class TrainingData:
         bagSet = TrainingData("bag", bag)
         return bagSet
 
-
     def addSampleFromFeatures(self, features, label):
         #Make a sample object and add it to the data list
         samp = sample(features, label)
         self.addSample(samp)
 
-
     def getKSegments(self, k):
+        #Partition the dataset into k equal segements. This 
+        # is used to create the sets for crossvalidation
 
         randomDatalist = list(self.data)
         random.shuffle(randomDatalist)
@@ -311,9 +311,7 @@ class TrainingData:
 
         return (means, stdDevs)
 
-
-
-
     def combineWithNewData(self, newData):
+        #Combine this data set with another one
         self.data += newData.getData()
 

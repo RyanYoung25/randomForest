@@ -1,20 +1,18 @@
 #!/usr/bin/env python
 
 from AngleCalculator import generateAngles
-from C45Tree import C45Tree
 from RandomForest import RandomForest
 from Data import TrainingData, sample
 from MakeData import returnLine
-import sys
 import copy
-import random
-import numpy
+#Author: Ryan Young
 
 #An array of all the files containing data and an array of the labels for each file 
 labels = ["Disco", "ChickenDance", "WalkLikeAnEgyptian", "YMCA"]
-sub1 = [ "./data/PositionsDisco.log", "./data/PositionsChkn.log", "./data/PositionsEgy.log", "./data/Positionsymca.log"]
+sub1 = ["./data/PositionsDisco.log", "./data/PositionsChkn.log", "./data/PositionsEgy.log", "./data/Positionsymca.log"]
 sub2 = ["./data/TestDisco.log", "./data/TestChkn.log", "./data/TestEgy.log", "./data/TestYMCA.log"]
 sub3 = ["./data/JDisco.log", "./data/JChkn.log", "./data/JEgy.log", "./data/JYMCA.log"]
+
 
 class confusionMatrix:
     '''
@@ -40,17 +38,23 @@ class confusionMatrix:
                 print self.matrix[label][nextLabel],
             print '\n'
 
+
 def generateAllAngleTrainingData():
+    '''
+    This function creates one large TrainingData object 
+    containing data from all three participants but uses
+    calculated angles as the features for each data sample.
+    '''
     trainingData = TrainingData("Testing Data")
     index = 0
 
-    for i in xrange(len(labels)) :
+    for i in xrange(len(labels)):
         #Open the file
-        fIn = open(sub1[i],'r')
+        fIn = open(sub1[i], 'r')
         f2In = open(sub2[i], 'r')
         f3In = open(sub3[i], 'r')
 
-        #For each line of the file calculate the 
+        #For each line of the files calculate the 
         # angles inbetween joints and use the resulting 
         # array as the feature vector. Add that to the trainingData.
         for line in fIn:
@@ -70,22 +74,27 @@ def generateAllAngleTrainingData():
 
         index += 1
 
+    #Return the data object
     return trainingData
 
 
 def generateAllPositionTrainingData():
+    '''
+    This function creates one large TrainingData object 
+    containing data from all three participants but uses
+    regular position data as the features for each data sample.
+    '''
     trainingData = TrainingData("Testing Data")
     index = 0
 
-    for i in xrange(len(labels)) :
+    for i in xrange(len(labels)):
         #Open the file
-        fIn = open(sub1[i],'r')
+        fIn = open(sub1[i], 'r')
         f2In = open(sub2[i], 'r')
         f3In = open(sub3[i], 'r')
 
-        #For each line of the file calculate the 
-        # angles inbetween joints and use the resulting 
-        # array as the feature vector. Add that to the trainingData.
+        #For each line of the files, create a feature vector
+        # of the raw joint positions. Add that to the trainingData.
         for line in fIn:
             features = returnLine(line)
             trainingData.addSampleFromFeatures(features, labels[index])
@@ -103,19 +112,26 @@ def generateAllPositionTrainingData():
 
         index += 1
 
+    #Return the data
     return trainingData   
 
 
 def generateTwoAngleTrainingData():
+    '''
+    This function creates training data using the first
+    two participants' data and has joint angles as features
+    for the samples.
+    '''
+
     trainingData = TrainingData("Testing Data")
     index = 0
 
-    for i in xrange(len(labels)) :
+    for i in xrange(len(labels)):
         #Open the file
-        fIn = open(sub1[i],'r')
+        fIn = open(sub1[i], 'r')
         f2In = open(sub2[i], 'r')
 
-        #For each line of the file calculate the 
+        #For each line of the files calculate the 
         # angles inbetween joints and use the resulting 
         # array as the feature vector. Add that to the trainingData.
         for line in fIn:
@@ -134,17 +150,22 @@ def generateTwoAngleTrainingData():
 
 
 def generateTwoPositionTrainingData():
+    '''
+    This function creates training data using the first
+    two participants' data and has joint positions as features
+    for the samples.
+    '''
+
     trainingData = TrainingData("Testing Data")
     index = 0
 
-    for i in xrange(len(labels)) :
+    for i in xrange(len(labels)):
         #Open the file
-        fIn = open(sub1[i],'r')
+        fIn = open(sub1[i], 'r')
         f2In = open(sub2[i], 'r')
 
-        #For each line of the file calculate the 
-        # angles inbetween joints and use the resulting 
-        # array as the feature vector. Add that to the trainingData.
+        #For each line of the files, create a feature vector
+        # of the raw joint positions. Add that to the trainingData.
         for line in fIn:
             features = returnLine(line)
             trainingData.addSampleFromFeatures(features, labels[index])
@@ -161,15 +182,21 @@ def generateTwoPositionTrainingData():
 
 
 def generateOneTestAngleData():
+    '''
+    This creates a list of sample objects that can 
+    be used for testing. This list is built from the third 
+    participant's data and uses angles as features.
+    '''
+
     testSamples = []
     index = 0
 
     for filename in sub3:
         #Open the file
-        fIn = open(filename,'r')
+        fIn = open(filename, 'r')
         #For each line of the file calculate the 
         # angles inbetween joints and use the resulting 
-        # array as the feature vector. Add that to the trainingData.
+        # array as the feature vector. Add that to the list.
         for line in fIn:
             features = generateAngles(line)
             testSamples.append(sample(features, labels[index]))
@@ -178,16 +205,24 @@ def generateOneTestAngleData():
 
     return testSamples
 
+
 def generateOneTestPositionData(means, stdDevs):
+    '''
+    This creates a list of sample objects that can 
+    be used for testing. This list is built from the third 
+    participant's data and uses joint positions as features.
+    The poisitions are also normalized as they are added to 
+    the list.
+    '''
+
     testSamples = []
     index = 0
 
     for filename in sub3:
         #Open the file
-        fIn = open(filename,'r')
-        #For each line of the file calculate the 
-        # angles inbetween joints and use the resulting 
-        # array as the feature vector. Add that to the trainingData.
+        fIn = open(filename, 'r')
+        #For each line of the files, create a feature vector
+        # of the raw joint positions. Add that to the list.
         for line in fIn:
             features = returnLine(line)
             samp = sample(features, labels[index])
@@ -198,16 +233,22 @@ def generateOneTestPositionData(means, stdDevs):
 
     return testSamples
 
+
 def generateTwoTestAngleData():
+    '''
+    This creates a list of data samples to be tested.
+    Theses samples are from participants 2 and 3 and
+    the calculated angles are used as features.
+    '''
     testSamples = []
     index = 0
 
     for filename in sub2:
         #Open the file
-        fIn = open(filename,'r')
+        fIn = open(filename, 'r')
         #For each line of the file calculate the 
         # angles inbetween joints and use the resulting 
-        # array as the feature vector. Add that to the trainingData.
+        # array as the feature vector. Add that to the list.
         for line in fIn:
             features = generateAngles(line)
             testSamples.append(sample(features, labels[index]))
@@ -217,10 +258,10 @@ def generateTwoTestAngleData():
     index = 0
     for filename in sub3:
         #Open the file
-        fIn = open(filename,'r')
+        fIn = open(filename, 'r')
         #For each line of the file calculate the 
         # angles inbetween joints and use the resulting 
-        # array as the feature vector. Add that to the trainingData.
+        # array as the feature vector. Add that to the list.
         for line in fIn:
             features = generateAngles(line)
             testSamples.append(sample(features, labels[index]))
@@ -229,16 +270,21 @@ def generateTwoTestAngleData():
 
     return testSamples
 
+
 def generateTwoTestPositionData(means, stdDevs):
+    '''
+    This creates a list of data samples to be tested.
+    Theses samples are from participants 2 and 3 and
+    the joint poisitions are used as features.
+    '''
     testSamples = []
     index = 0
 
     for filename in sub2:
         #Open the file
-        fIn = open(filename,'r')
-        #For each line of the file calculate the 
-        # angles inbetween joints and use the resulting 
-        # array as the feature vector. Add that to the trainingData.
+        fIn = open(filename, 'r')
+        #For each line of the files, create a feature vector
+        # of the raw joint positions. Add that to the list.
         for line in fIn:
             features = returnLine(line)
             samp = sample(features, labels[index])
@@ -251,10 +297,9 @@ def generateTwoTestPositionData(means, stdDevs):
 
     for filename in sub3:
         #Open the file
-        fIn = open(filename,'r')
-        #For each line of the file calculate the 
-        # angles inbetween joints and use the resulting 
-        # array as the feature vector. Add that to the trainingData.
+        fIn = open(filename, 'r')
+        #For each line of the files, create a feature vector
+        # of the raw joint positions. Add that to the list.
         for line in fIn:
             features = returnLine(line)
             samp = sample(features, labels[index])
@@ -265,13 +310,19 @@ def generateTwoTestPositionData(means, stdDevs):
 
     return testSamples
 
+
 def generateOneTrainAngleData():
+    '''
+    This creates a data set to be used to train a classifier.
+    The data is from participant 1 and uses the calculated
+    joint angles as features.
+    '''
     trainingData = TrainingData("Angle Data")
     index = 0
 
     for filename in sub1:
         #Open the file
-        fIn = open(filename,'r')
+        fIn = open(filename, 'r')
         #For each line of the file calculate the 
         # angles inbetween joints and use the resulting 
         # array as the feature vector. Add that to the trainingData.
@@ -283,16 +334,21 @@ def generateOneTrainAngleData():
 
     return trainingData
 
+
 def generateOneTrainPositionData():
+    '''
+    This creates a data set to be used to train a classifier.
+    The data is from participant 1 and uses the joint positions
+    as features.
+    '''
     trainingData = TrainingData("Position Data")
     index = 0
 
     for filename in sub1:
         #Open the file
-        fIn = open(filename,'r')
-        #For each line of the file calculate the 
-        # angles inbetween joints and use the resulting 
-        # array as the feature vector. Add that to the trainingData.
+        fIn = open(filename, 'r')
+        #For each line of the files, create a feature vector
+        # of the raw joint positions. Add that to the trainingData.
         for line in fIn:
             features = returnLine(line)
             trainingData.addSampleFromFeatures(features, labels[index])
@@ -303,8 +359,12 @@ def generateOneTrainPositionData():
 
 
 def crossValidationAngles():
+    '''
+    Performs 10 fold cross validation on the total angle 
+    dataset
+    '''
     theData = generateAllAngleTrainingData() 
-    k= 10
+    k = 10
 
     #Partition the data into 10 subsets
     dataSets = theData.getKSegments(k)
@@ -329,18 +389,22 @@ def crossValidationAngles():
 
         #Evaluate the classifer on the test set
         
-        for sample in testSet.getData():
-            resultLabel = testForest.classify(sample)
-            trueLabel = sample.getLabel()
+        for samp in testSet.getData():
+            resultLabel = testForest.classify(samp)
+            trueLabel = samp.getLabel()
             results.update(trueLabel, resultLabel)
 
     results.printMatrix()
 
 
 def crossValidationPositions():
+    '''
+    Performs 10 fold cross validation on the total 
+    joint position dataset
+    '''
     theData = generateAllPositionTrainingData() 
     means, stdDevs = theData.normalizeData()
-    k= 10
+    k = 10
 
     #Partition the data into 10 subsets
     dataSets = theData.getKSegments(k)
@@ -365,9 +429,9 @@ def crossValidationPositions():
 
         #Evaluate the classifer on the test set
         
-        for sample in testSet.getData():
-            resultLabel = testForest.classify(sample)
-            trueLabel = sample.getLabel()
+        for samp in testSet.getData():
+            resultLabel = testForest.classify(samp)
+            trueLabel = samp.getLabel()
 
             results.update(trueLabel, resultLabel)
 
@@ -375,6 +439,11 @@ def crossValidationPositions():
 
 
 def oneVsTwoAngles():
+    '''
+    Trains a random forest on the data from participant 1 
+    and tests it on participant 2 and 3. The data used here 
+    uses the angle features
+    '''
     theData = generateOneTrainAngleData()
     testForest = RandomForest(theData)
     print "Training"
@@ -393,7 +462,13 @@ def oneVsTwoAngles():
 
     results.printMatrix()
 
+
 def oneVsTwoPositions():
+    '''
+    Trains a random forest on the data from participant 1 
+    and tests it on participant 2 and 3. The data used here 
+    uses the position features
+    '''
     theData = generateOneTrainPositionData()
     means, stdDevs = theData.normalizeData()
     testForest = RandomForest(theData)
@@ -415,6 +490,11 @@ def oneVsTwoPositions():
 
 
 def twoVsOneAngles():
+    '''
+    Trains a random forest on the data from participants 1 and 2 
+    and tests it on participant 3. The data used here 
+    uses the angle features
+    '''
     theData = generateTwoAngleTrainingData()
     testForest = RandomForest(theData)
     print "Training"
@@ -433,7 +513,13 @@ def twoVsOneAngles():
 
     results.printMatrix()
 
+
 def twoVsOnePositions():
+    '''
+    Trains a random forest on the data from participants 1 and 2 
+    and tests it on participant 3. The data used here 
+    uses the angle features
+    '''
     theData = generateTwoPositionTrainingData()
     means, stdDevs = theData.normalizeData()
     testForest = RandomForest(theData)
